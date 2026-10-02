@@ -1,0 +1,104 @@
+library(sky130_mock) {
+  delay_model : table_lookup;
+  in_place_reg : true;
+  voltage : 1.8;
+  time_unit : "1ns";
+  capacitance_unit(1,pf);
+
+  /* Global Threshold Definitions required by OpenSTA */
+  slew_lower_threshold_pct_rise : 20.0;
+  slew_upper_threshold_pct_rise : 80.0;
+  slew_lower_threshold_pct_fall : 20.0;
+  slew_upper_threshold_pct_fall : 80.0;
+  input_threshold_pct_rise      : 50.0;
+  input_threshold_pct_fall      : 50.0;
+  output_threshold_pct_rise     : 50.0;
+  output_threshold_pct_fall     : 50.0;
+  slew_derate_from_library      : 1.0;
+
+  /* Define D Flip-Flop */
+  cell(dff) {
+    area : 1;
+    ff("IQ", "IQN") {
+      clocked_on : "clk";
+      next_state : "d";
+    }
+    pin(clk) {
+      direction : input;
+      clock : true;
+    }
+    pin(d) {
+      direction : input;
+      timing() {
+        related_pin : "clk";
+        timing_type : setup_rising;
+        rise_constraint(scalar) {
+          values("0.1");
+        }
+        fall_constraint(scalar) {
+          values("0.1");
+        }
+      }
+      timing() {
+        related_pin : "clk";
+        timing_type : hold_rising;
+        rise_constraint(scalar) {
+          values("0.05");
+        }
+        fall_constraint(scalar) {
+          values("0.05");
+        }
+      }
+    }
+    pin(q) {
+      direction : output;
+      function : "IQ";
+      /* Clock-to-Q delay of 0.2 ns */
+      timing() {
+        related_pin : "clk";
+        timing_type : rising_edge;
+        cell_rise(scalar) {
+          values("0.2");
+        }
+        cell_fall(scalar) {
+          values("0.2");
+        }
+        rise_transition(scalar) {
+          values("0.01");
+        }
+        fall_transition(scalar) {
+          values("0.01");
+        }
+      }
+    }
+  }
+
+  /* Define Buffer Gate */
+  cell(buf) {
+    area : 1;
+    pin(a) {
+      direction : input;
+    }
+    pin(x) {
+      direction : output;
+      function : "a";
+      /* Propagation delay of 0.3 ns (Optimized for timing closure) */
+      timing() {
+        related_pin : "a";
+        cell_rise(scalar) {
+          values("0.3");
+        }
+        cell_fall(scalar) {
+          values("0.3");
+        }
+        rise_transition(scalar) {
+          values("0.01");
+        }
+        fall_transition(scalar) {
+          values("0.01");
+        }
+      }
+    }
+  }
+}
+
